@@ -1,7 +1,7 @@
-name = "React Router"
+name = "Remix"
 roles = ["frontend", "backend"]
 webhooks_path = "/webhooks/app"
 
 [commands]
 predev = "npx prisma generate"
-dev = "npx prisma migrate deploy && npm exec react-router dev"
+dev = "npx prisma migrate deploy && npm exec remix vite:dev"
