@@ -1,5 +1,29 @@
 import type { AdminApiContext } from "@shopify/shopify-app-remix/server";
 
+type GraphqlBody = {
+  data?: Record<string, unknown>;
+  errors?: { message: string }[];
+};
+
+function parseGraphqlResponse<T>(response: Response): T {
+  return response.json().then((body: GraphqlBody) => {
+    if (body.errors?.length) {
+      throw new Error(body.errors.map((e) => e.message).join("; "));
+    }
+    return body.data as T;
+  });
+}
+
+export type CustomerDetails = {
+  displayName: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  numberOfOrders: number;
+  defaultAddress: string | null;
+};
+
 export type CustomerOrder = {
   id: string;
   name: string;
@@ -9,6 +33,58 @@ export type CustomerOrder = {
   total: string;
   currencyCode: string;
 };
+
+export async function fetchCustomerDetails(
+  admin: AdminApiContext,
+  customerId: string,
+): Promise<CustomerDetails> {
+  const customerGid = `gid://shopify/Customer/${customerId}`;
+
+  const response = await admin.graphql(
+    `#graphql
+      query CustomerAccountDetails($customerId: ID!) {
+        customer(id: $customerId) {
+          displayName
+          firstName
+          lastName
+          email
+          phone
+          numberOfOrders
+          defaultAddress {
+            formatted(withName: true)
+          }
+        }
+      }`,
+    { variables: { customerId: customerGid } },
+  );
+
+  const data = await parseGraphqlResponse<{
+    customer: {
+      displayName: string;
+      firstName: string | null;
+      lastName: string | null;
+      email: string | null;
+      phone: string | null;
+      numberOfOrders: string;
+      defaultAddress: { formatted: string } | null;
+    } | null;
+  }>(response);
+
+  const customer = data.customer;
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  return {
+    displayName: customer.displayName,
+    firstName: customer.firstName,
+    lastName: customer.lastName,
+    email: customer.email,
+    phone: customer.phone,
+    numberOfOrders: Number(customer.numberOfOrders),
+    defaultAddress: customer.defaultAddress?.formatted ?? null,
+  };
+}
 
 export async function fetchCustomerOrders(
   admin: AdminApiContext,
@@ -38,13 +114,11 @@ export async function fetchCustomerOrders(
     { variables: { query: `customer_id:${customerId}` } },
   );
 
-  const body = await response.json();
-  const graphqlErrors = body.errors as { message: string }[] | undefined;
-  if (graphqlErrors?.length) {
-    throw new Error(graphqlErrors.map((e) => e.message).join("; "));
-  }
+  const data = await parseGraphqlResponse<{
+    orders: { nodes: unknown[] };
+  }>(response);
 
-  const nodes = body.data?.orders?.nodes ?? [];
+  const nodes = data.orders?.nodes ?? [];
 
   return nodes.map((order: {
     id: string;

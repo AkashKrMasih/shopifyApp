@@ -12,6 +12,47 @@
   margin: 0 0 1.25rem;
 }
 
+.card {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.details {
+  margin: 0;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: minmax(7rem, 9rem) 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.detailRow:last-child {
+  margin-bottom: 0;
+}
+
+.detailLabel {
+  margin: 0;
+  font-weight: 600;
+  color: #616161;
+}
+
+.detailValue {
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
 .message {
   margin: 0;
   padding: 1rem;
