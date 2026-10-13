@@ -14,35 +14,37 @@ export async function fetchCustomerOrders(
   admin: AdminApiContext,
   customerId: string,
 ): Promise<CustomerOrder[]> {
-  const customerGid = `gid://shopify/Customer/${customerId}`;
-
+  // Query orders by customer ID (read_orders). Avoids the Customer object, which
+  // requires protected customer data access for many apps.
   const response = await admin.graphql(
     `#graphql
-      query CustomerOrders($customerId: ID!) {
-        customer(id: $customerId) {
-          orders(first: 50, sortKey: CREATED_AT, reverse: true) {
-            nodes {
-              id
-              name
-              createdAt
-              displayFinancialStatus
-              displayFulfillmentStatus
-              totalPriceSet {
-                shopMoney {
-                  amount
-                  currencyCode
-                }
+      query OrdersByCustomer($query: String!) {
+        orders(first: 50, sortKey: CREATED_AT, reverse: true, query: $query) {
+          nodes {
+            id
+            name
+            createdAt
+            displayFinancialStatus
+            displayFulfillmentStatus
+            totalPriceSet {
+              shopMoney {
+                amount
+                currencyCode
               }
             }
           }
         }
       }`,
-    { variables: { customerId: customerGid } },
+    { variables: { query: `customer_id:${customerId}` } },
   );
 
-  const { data } = await response.json();
+  const body = await response.json();
+  const graphqlErrors = body.errors as { message: string }[] | undefined;
+  if (graphqlErrors?.length) {
+    throw new Error(graphqlErrors.map((e) => e.message).join("; "));
+  }
 
-  const nodes = data?.customer?.orders?.nodes ?? [];
+  const nodes = body.data?.orders?.nodes ?? [];
 
   return nodes.map((order: {
     id: string;

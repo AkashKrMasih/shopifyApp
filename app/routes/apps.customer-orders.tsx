@@ -41,11 +41,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const orders = await fetchCustomerOrders(context.admin, customerId);
     return json<LoaderData>({ appUrl, orders, error: null });
-  } catch {
+  } catch (error) {
+    console.error("Failed to load customer orders:", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown error";
+    const needsAllOrders =
+      message.includes("read_all_orders") ||
+      message.toLowerCase().includes("60 day");
     return json<LoaderData>({
       appUrl,
       orders: null,
-      error: "Unable to load orders. Please try again later.",
+      error: needsAllOrders
+        ? "Some orders could not be loaded. The store may need the read_all_orders scope for orders older than 60 days."
+        : "Unable to load orders. Please try again later.",
     });
   }
 };
