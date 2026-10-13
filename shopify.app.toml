@@ -4,7 +4,7 @@ application_url = "https://shopify.dev/apps/default-app-home"
 embedded = true
 
 [access_scopes]
-scopes = "read_orders,read_customers,write_app_proxy"
+scopes = "read_orders,write_app_proxy"
 
 [auth]
 redirect_urls = ["https://shopify.dev/apps/default-app-home/api/auth"]

@@ -14,16 +14,6 @@ function parseGraphqlResponse<T>(response: Response): T {
   });
 }
 
-export type CustomerDetails = {
-  displayName: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-  phone: string | null;
-  numberOfOrders: number;
-  defaultAddress: string | null;
-};
-
 export type CustomerOrder = {
   id: string;
   name: string;
@@ -34,64 +24,10 @@ export type CustomerOrder = {
   currencyCode: string;
 };
 
-export async function fetchCustomerDetails(
-  admin: AdminApiContext,
-  customerId: string,
-): Promise<CustomerDetails> {
-  const customerGid = `gid://shopify/Customer/${customerId}`;
-
-  const response = await admin.graphql(
-    `#graphql
-      query CustomerAccountDetails($customerId: ID!) {
-        customer(id: $customerId) {
-          displayName
-          firstName
-          lastName
-          email
-          phone
-          numberOfOrders
-          defaultAddress {
-            formatted(withName: true)
-          }
-        }
-      }`,
-    { variables: { customerId: customerGid } },
-  );
-
-  const data = await parseGraphqlResponse<{
-    customer: {
-      displayName: string;
-      firstName: string | null;
-      lastName: string | null;
-      email: string | null;
-      phone: string | null;
-      numberOfOrders: string;
-      defaultAddress: { formatted: string } | null;
-    } | null;
-  }>(response);
-
-  const customer = data.customer;
-  if (!customer) {
-    throw new Error("Customer not found.");
-  }
-
-  return {
-    displayName: customer.displayName,
-    firstName: customer.firstName,
-    lastName: customer.lastName,
-    email: customer.email,
-    phone: customer.phone,
-    numberOfOrders: Number(customer.numberOfOrders),
-    defaultAddress: customer.defaultAddress?.formatted ?? null,
-  };
-}
-
 export async function fetchCustomerOrders(
   admin: AdminApiContext,
   customerId: string,
 ): Promise<CustomerOrder[]> {
-  // Query orders by customer ID (read_orders). Avoids the Customer object, which
-  // requires protected customer data access for many apps.
   const response = await admin.graphql(
     `#graphql
       query OrdersByCustomer($query: String!) {
