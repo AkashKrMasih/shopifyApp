@@ -1,0 +1,14 @@
+<div class="card h-100 border-0">
+  <a href="{{ product.url }}" class="text-decoration-none">
+    {%- if product.featured_image -%}
+      {{ product.featured_image | image_url: width: 600 | image_tag: class: 'card-img-top', loading: 'lazy', alt: product.title }}
+    {%- else -%}
+      <div class="ratio ratio-1x1 bg-body-secondary"></div>
+    {%- endif -%}
+  </a>
+  <div class="card-body px-0">
+    <a href="{{ product.url }}" class="text-decoration-none text-body"><h3 class="h6 mb-1">{{ product.title }}</h3></a>
+    <span class="text-secondary">{{ product.price | money }}</span>
+    {% unless product.available %}<span class="badge text-bg-secondary ms-1">Sold out</span>{% endunless %}
+  </div>
+</div>

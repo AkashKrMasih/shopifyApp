@@ -1,0 +1,42 @@
+<div class="container py-5">
+  <div class="row g-5">
+    <div class="col-md-6">
+      {%- for media in product.media -%}
+        {%- if media.media_type == 'image' -%}
+          {{ media | image_url: width: 900 | image_tag: class: 'img-fluid mb-3 w-100', loading: 'lazy', alt: media.alt | default: product.title }}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+    <div class="col-md-6">
+      <h1 class="h2">{{ product.title }}</h1>
+      <p class="fs-4">{{ product.selected_or_first_available_variant.price | money }}</p>
+
+      {%- form 'product', product, class: 'mb-4' -%}
+        {%- if product.has_only_default_variant -%}
+          <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+        {%- else -%}
+          <label for="variant" class="form-label">Option</label>
+          <select name="id" id="variant" class="form-select mb-3">
+            {%- for variant in product.variants -%}
+              <option value="{{ variant.id }}" {% if variant == product.selected_or_first_available_variant %}selected{% endif %} {% unless variant.available %}disabled{% endunless %}>
+                {{ variant.title }} - {{ variant.price | money }}
+              </option>
+            {%- endfor -%}
+          </select>
+        {%- endif -%}
+        <label for="qty" class="form-label">Quantity</label>
+        <input type="number" id="qty" name="quantity" value="1" min="1" class="form-control mb-3" style="max-width:120px">
+        <button type="submit" class="btn btn-dark btn-lg w-100" {% unless product.available %}disabled{% endunless %}>
+          {% if product.available %}Add to cart{% else %}Sold out{% endif %}
+        </button>
+        {{ form | payment_button }}
+      {%- endform -%}
+
+      <div class="product-description">{{ product.description }}</div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{ "name": "Product" }
+{% endschema %}

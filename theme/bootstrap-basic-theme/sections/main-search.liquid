@@ -1,0 +1,25 @@
+<div class="container py-5">
+  <h1 class="mb-4">Search</h1>
+  <form action="{{ routes.search_url }}" method="get" class="d-flex gap-2 mb-4">
+    <input type="search" name="q" value="{{ search.terms | escape }}" class="form-control" placeholder="Search products">
+    <button class="btn btn-dark" type="submit">Search</button>
+  </form>
+  {%- if search.performed -%}
+    {%- paginate search.results by 12 -%}
+      <p class="text-secondary">{{ search.results_count }} result(s) for "{{ search.terms }}"</p>
+      <div class="row row-cols-2 row-cols-md-4 g-4">
+        {%- for item in search.results -%}
+          {%- if item.object_type == 'product' -%}
+            <div class="col">{% render 'product-card', product: item %}</div>
+          {%- else -%}
+            <div class="col-12"><a href="{{ item.url }}">{{ item.title }}</a></div>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    {%- endpaginate -%}
+  {%- endif -%}
+</div>
+
+{% schema %}
+{ "name": "Search" }
+{% endschema %}

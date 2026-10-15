@@ -1,0 +1,22 @@
+<section class="py-5 bg-body-tertiary text-center">
+  <div class="container py-5">
+    <h1 class="display-4 fw-bold">{{ section.settings.heading }}</h1>
+    {% if section.settings.subheading != blank %}<p class="lead text-secondary">{{ section.settings.subheading }}</p>{% endif %}
+    {% if section.settings.button_label != blank %}
+      <a href="{{ section.settings.button_link | default: routes.all_products_collection_url }}" class="btn btn-dark btn-lg mt-3">{{ section.settings.button_label }}</a>
+    {% endif %}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Hero",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Welcome to our store" },
+    { "type": "text", "id": "subheading", "label": "Subheading", "default": "Discover our latest products" },
+    { "type": "text", "id": "button_label", "label": "Button label", "default": "Shop now" },
+    { "type": "url", "id": "button_link", "label": "Button link" }
+  ],
+  "presets": [{ "name": "Hero" }]
+}
+{% endschema %}

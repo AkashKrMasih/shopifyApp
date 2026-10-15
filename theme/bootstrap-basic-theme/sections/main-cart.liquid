@@ -1,0 +1,42 @@
+<div class="container py-5">
+  <h1 class="mb-4">Your cart</h1>
+  {%- if cart.item_count > 0 -%}
+    <form action="{{ routes.cart_url }}" method="post">
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead><tr><th>Product</th><th>Price</th><th style="width:120px">Qty</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {%- for item in cart.items -%}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    {% if item.image %}{{ item.image | image_url: width: 100 | image_tag: width: 60, class: 'rounded' }}{% endif %}
+                    <div><a href="{{ item.url }}" class="text-decoration-none">{{ item.product.title }}</a>
+                    {% unless item.product.has_only_default_variant %}<div class="small text-secondary">{{ item.variant.title }}</div>{% endunless %}</div>
+                  </div>
+                </td>
+                <td>{{ item.final_price | money }}</td>
+                <td><input type="number" name="updates[]" value="{{ item.quantity }}" min="0" class="form-control form-control-sm"></td>
+                <td class="text-end">{{ item.final_line_price | money }}</td>
+              </tr>
+            {%- endfor -%}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <h4 class="mb-0">Subtotal: {{ cart.total_price | money }}</h4>
+        <div class="d-flex gap-2">
+          <button type="submit" name="update" class="btn btn-outline-dark">Update</button>
+          <button type="submit" name="checkout" class="btn btn-dark">Checkout</button>
+        </div>
+      </div>
+    </form>
+  {%- else -%}
+    <p>Your cart is empty.</p>
+    <a href="{{ routes.all_products_collection_url }}" class="btn btn-dark">Continue shopping</a>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{ "name": "Cart" }
+{% endschema %}

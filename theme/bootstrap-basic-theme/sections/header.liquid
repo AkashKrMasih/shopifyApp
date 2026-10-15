@@ -1,0 +1,60 @@
+<header>
+  <nav class="navbar navbar-expand-lg bg-body border-bottom {% if section.settings.sticky %}sticky-top{% endif %}">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="{{ routes.root_url }}">
+        {%- if section.settings.logo != blank -%}
+          {{ section.settings.logo | image_url: width: 300 | image_tag: alt: shop.name, height: 40, class: 'd-inline-block align-text-top', style: 'width:auto;max-height:40px' }}
+        {%- else -%}
+          {{ shop.name }}
+        {%- endif -%}
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {%- for link in section.settings.menu.links -%}
+            {%- if link.links != blank -%}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle {% if link.active %}active{% endif %}" href="{{ link.url }}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ link.title }}</a>
+                <ul class="dropdown-menu">
+                  {%- for child in link.links -%}
+                    <li><a class="dropdown-item" href="{{ child.url }}">{{ child.title }}</a></li>
+                  {%- endfor -%}
+                </ul>
+              </li>
+            {%- else -%}
+              <li class="nav-item">
+                <a class="nav-link {% if link.active %}active{% endif %}" href="{{ link.url }}">{{ link.title }}</a>
+              </li>
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+
+        <div class="d-flex align-items-center gap-3">
+          <a class="nav-link" href="{{ routes.search_url }}" aria-label="Search"><i class="bi bi-search"></i></a>
+          {%- if shop.customer_accounts_enabled -%}
+            <a class="nav-link" href="{{ routes.account_url }}" aria-label="Account"><i class="bi bi-person"></i></a>
+          {%- endif -%}
+          <a class="nav-link position-relative" href="{{ routes.cart_url }}" aria-label="Cart">
+            <i class="bi bi-bag"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">{{ cart.item_count }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+{% schema %}
+{
+  "name": "Header",
+  "settings": [
+    { "type": "image_picker", "id": "logo", "label": "Logo" },
+    { "type": "link_list", "id": "menu", "label": "Menu", "default": "main-menu" },
+    { "type": "checkbox", "id": "sticky", "label": "Sticky header", "default": true }
+  ]
+}
+{% endschema %}

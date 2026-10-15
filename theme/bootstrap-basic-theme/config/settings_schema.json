@@ -1,0 +1,10 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Bootstrap Basic",
+    "theme_version": "1.0.0",
+    "theme_author": "Your Name",
+    "theme_documentation_url": "https://getbootstrap.com/docs/5.3/",
+    "theme_support_url": "https://help.shopify.com"
+  }
+]

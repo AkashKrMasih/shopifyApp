@@ -1,0 +1,21 @@
+<section class="container py-5">
+  {% if section.settings.title != blank %}<h2 class="mb-4">{{ section.settings.title }}</h2>{% endif %}
+  <div class="row row-cols-2 row-cols-md-4 g-4">
+    {%- assign col = section.settings.collection | default: collections.all -%}
+    {%- for product in col.products limit: section.settings.limit -%}
+      <div class="col">{% render 'product-card', product: product %}</div>
+    {%- endfor -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Featured collection",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Title", "default": "Featured products" },
+    { "type": "collection", "id": "collection", "label": "Collection" },
+    { "type": "range", "id": "limit", "label": "Products to show", "min": 4, "max": 16, "step": 4, "default": 8 }
+  ],
+  "presets": [{ "name": "Featured collection" }]
+}
+{% endschema %}

@@ -1,0 +1,3 @@
+/* Custom overrides on top of Bootstrap */
+.product-description img { max-width: 100%; height: auto; }
+.rte img { max-width: 100%; height: auto; }
