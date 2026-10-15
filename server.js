@@ -1,8 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+const { renderProxyOrders } = require('./lib/renderProxyOrders');
 
 const {
   SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOP,
@@ -41,10 +40,6 @@ const safeEqual = (a = '', b = '') => {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
-const esc = (s) =>
-  String(s ?? '').replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
 // Verify the signature Shopify adds to App Proxy requests
 function verifyProxy(query) {
   const { signature, ...rest } = query;
@@ -78,43 +73,9 @@ async function fetchOrders(customerId) {
   return json.data.orders.nodes;
 }
 
-const PROXY_ORDERS_TEMPLATE = fs.readFileSync(
-  path.join(__dirname, 'templates', 'proxy-orders.liquid'),
-  'utf8',
-);
-
-function renderProxyOrdersPage(bodyHtml) {
-  return PROXY_ORDERS_TEMPLATE.replace('__ORDERS_BODY__', bodyHtml);
-}
-
-function sendProxyOrdersPage(res, bodyHtml) {
+async function sendProxyOrdersPage(res, locals) {
   res.set('Content-Type', 'application/liquid; charset=utf-8');
-  res.send(renderProxyOrdersPage(bodyHtml));
-}
-
-const ordersTableStyles = `
-<style>
-  .my-orders-table{width:100%;border-collapse:collapse;margin-top:1rem}
-  .my-orders-table th,.my-orders-table td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(var(--color-foreground),.08)}
-  .my-orders-table th{font-size:.8rem;text-transform:uppercase;opacity:.75}
-</style>`;
-
-function ordersTableHtml(orders) {
-  const rows = orders.map((o) => {
-    const p = o.currentTotalPriceSet.shopMoney;
-    return `<tr>
-      <td>${esc(o.name)}</td>
-      <td>${esc(new Date(o.createdAt).toLocaleDateString())}</td>
-      <td>${esc(o.displayFinancialStatus)}</td>
-      <td>${esc(o.displayFulfillmentStatus)}</td>
-      <td>${esc(p.amount)} ${esc(p.currencyCode)}</td>
-    </tr>`;
-  }).join('');
-  return `${ordersTableStyles}
-    <table class="my-orders-table">
-      <thead><tr><th>Order</th><th>Date</th><th>Payment</th><th>Fulfillment</th><th>Total</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  res.send(await renderProxyOrders(locals));
 }
 
 // ---------- App Proxy: /apps/my-orders  ->  /proxy/orders ----------
@@ -124,22 +85,17 @@ app.get('/proxy/orders', async (req, res) => {
   // Shopify sets this only when a customer is logged in on the storefront
   const customerId = req.query.logged_in_customer_id;
   if (!customerId) {
-    return sendProxyOrdersPage(
-      res,
-      '<p>Please <a href="/account/login">log in</a> to see your orders.</p>',
-    );
+    return sendProxyOrdersPage(res, { state: 'login' });
   }
 
   try {
     const orders = await fetchOrders(customerId);
-    const body = orders.length
-      ? ordersTableHtml(orders)
-      : '<p>You have no orders yet.</p>';
-    sendProxyOrdersPage(res, body);
+    const state = orders.length ? 'orders' : 'empty';
+    await sendProxyOrdersPage(res, { state, orders });
   } catch (err) {
     console.error(err);
     res.status(500);
-    sendProxyOrdersPage(res, '<p>Something went wrong loading your orders.</p>');
+    await sendProxyOrdersPage(res, { state: 'error' });
   }
 });
 

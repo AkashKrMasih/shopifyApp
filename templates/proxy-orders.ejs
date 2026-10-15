@@ -1,0 +1,46 @@
+{% layout 'theme' %}
+<div class="page-width section-template--padding">
+  <h1 class="main-page-title page-title h0">My orders</h1>
+  <div class="rte">
+{% raw %}
+<% if (state === 'login') { %>
+  <p>Please <a href="/account/login">log in</a> to see your orders.</p>
+<% } else if (state === 'error') { %>
+  <p>Something went wrong loading your orders.</p>
+<% } else if (state === 'empty') { %>
+  <p>You have no orders yet.</p>
+<% } else if (state === 'orders') { %>
+<style>
+  .my-orders-table{width:100%;border-collapse:collapse;margin-top:1rem}
+  .my-orders-table th,.my-orders-table td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(var(--color-foreground),.08)}
+  .my-orders-table th{font-size:.8rem;text-transform:uppercase;opacity:.75}
+</style>
+  <table class="my-orders-table">
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Date</th>
+        <th>Payment</th>
+        <th>Fulfillment</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+<% orders.forEach(function (order) {
+  const money = order.currentTotalPriceSet.shopMoney;
+  const orderDate = new Date(order.createdAt).toLocaleDateString();
+%>
+      <tr>
+        <td><%= order.name %></td>
+        <td><%= orderDate %></td>
+        <td><%= order.displayFinancialStatus %></td>
+        <td><%= order.displayFulfillmentStatus %></td>
+        <td><%= money.amount %> <%= money.currencyCode %></td>
+      </tr>
+<% }); %>
+    </tbody>
+  </table>
+<% } %>
+{% endraw %}
+  </div>
+</div>
