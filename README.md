@@ -85,3 +85,6 @@ npm start
 | `server.js` | Express server: App Proxy route, token handling, order listing |
 | `.env.example` | Environment variable template |
 | `package.json` | Dependencies and `npm start` script |
+
+
+cloudflared tunnel --url http://localhost:3000
