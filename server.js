@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const {
   SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOP,
@@ -76,14 +78,44 @@ async function fetchOrders(customerId) {
   return json.data.orders.nodes;
 }
 
-const page = (body) => `<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>My orders</title>
+const PROXY_ORDERS_TEMPLATE = fs.readFileSync(
+  path.join(__dirname, 'templates', 'proxy-orders.liquid'),
+  'utf8',
+);
+
+function renderProxyOrdersPage(bodyHtml) {
+  return PROXY_ORDERS_TEMPLATE.replace('__ORDERS_BODY__', bodyHtml);
+}
+
+function sendProxyOrdersPage(res, bodyHtml) {
+  res.set('Content-Type', 'application/liquid; charset=utf-8');
+  res.send(renderProxyOrdersPage(bodyHtml));
+}
+
+const ordersTableStyles = `
 <style>
-  body{font-family:system-ui,sans-serif;max-width:760px;margin:40px auto;padding:0 16px;color:#222}
-  table{width:100%;border-collapse:collapse}
-  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #e5e5e5}
-  th{font-size:.8rem;text-transform:uppercase;color:#666}
-</style></head><body>${body}</body></html>`;
+  .my-orders-table{width:100%;border-collapse:collapse;margin-top:1rem}
+  .my-orders-table th,.my-orders-table td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(var(--color-foreground),.08)}
+  .my-orders-table th{font-size:.8rem;text-transform:uppercase;opacity:.75}
+</style>`;
+
+function ordersTableHtml(orders) {
+  const rows = orders.map((o) => {
+    const p = o.currentTotalPriceSet.shopMoney;
+    return `<tr>
+      <td>${esc(o.name)}</td>
+      <td>${esc(new Date(o.createdAt).toLocaleDateString())}</td>
+      <td>${esc(o.displayFinancialStatus)}</td>
+      <td>${esc(o.displayFulfillmentStatus)}</td>
+      <td>${esc(p.amount)} ${esc(p.currencyCode)}</td>
+    </tr>`;
+  }).join('');
+  return `${ordersTableStyles}
+    <table class="my-orders-table">
+      <thead><tr><th>Order</th><th>Date</th><th>Payment</th><th>Fulfillment</th><th>Total</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
 
 // ---------- App Proxy: /apps/my-orders  ->  /proxy/orders ----------
 app.get('/proxy/orders', async (req, res) => {
@@ -92,30 +124,22 @@ app.get('/proxy/orders', async (req, res) => {
   // Shopify sets this only when a customer is logged in on the storefront
   const customerId = req.query.logged_in_customer_id;
   if (!customerId) {
-    return res.send(page(`<h1>My orders</h1>
-      <p>Please <a href="/account/login">log in</a> to see your orders.</p>`));
+    return sendProxyOrdersPage(
+      res,
+      '<p>Please <a href="/account/login">log in</a> to see your orders.</p>',
+    );
   }
 
   try {
     const orders = await fetchOrders(customerId);
-    const rows = orders.map((o) => {
-      const p = o.currentTotalPriceSet.shopMoney;
-      return `<tr>
-        <td>${esc(o.name)}</td>
-        <td>${esc(new Date(o.createdAt).toLocaleDateString())}</td>
-        <td>${esc(o.displayFinancialStatus)}</td>
-        <td>${esc(o.displayFulfillmentStatus)}</td>
-        <td>${esc(p.amount)} ${esc(p.currencyCode)}</td>
-      </tr>`;
-    }).join('');
-
-    res.send(page(`<h1>My orders</h1>` + (orders.length
-      ? `<table><thead><tr><th>Order</th><th>Date</th><th>Payment</th><th>Fulfillment</th><th>Total</th></tr></thead>
-         <tbody>${rows}</tbody></table>`
-      : `<p>You have no orders yet.</p>`)));
+    const body = orders.length
+      ? ordersTableHtml(orders)
+      : '<p>You have no orders yet.</p>';
+    sendProxyOrdersPage(res, body);
   } catch (err) {
     console.error(err);
-    res.status(500).send(page('<p>Something went wrong loading your orders.</p>'));
+    res.status(500);
+    sendProxyOrdersPage(res, '<p>Something went wrong loading your orders.</p>');
   }
 });
 
