@@ -82,9 +82,10 @@ npm start
 
 | File | Purpose |
 |------|---------|
-| `server.js` | Express server: App Proxy route, token handling, order listing |
+| `server.ts` | Express server: App Proxy route, token handling, order listing |
 | `templates/proxy-orders.ejs` | Storefront markup for `/proxy/orders` (rendered to Liquid for the theme layout) |
-| `lib/renderProxyOrders.js` | Renders the proxy orders template with view data |
+| `lib/renderProxyOrders.ts` | Renders the proxy orders template with view data |
+| `tsconfig.json` | TypeScript compiler options (`npm run build` emits `dist/`) |
 | `.env.example` | Environment variable template |
 | `package.json` | Dependencies and `npm start` script |
 
